@@ -1,4 +1,4 @@
-read "../FieldElimination.mpl":
+read "../ComputeIdentifiableFunctions.mpl":
 
 cases := [
     [
