@@ -2,23 +2,23 @@ read "../FieldElimination.mpl":
 
 cases := [
     [
-        [[a * b, b], [b]],
+        [[a * b, b], [a]],
         [1 / a]
     ],
     [
-        [[a + b, a * b], [a]],
+        [[a + b, a * b], [b]],
         []
     ],
     [
-        [[a * b + c, b], [b]],
+        [[a * b + c, b], [a, c]],
         []
     ],
     [
-        [[a * b, c * b, d * b], [b]],
+        [[a * b, c * b, d * b], [a, c, d]],
         [a / c, a / d]
     ],
     [
-        [[a + b + c, a^2 + b^2 + c^2, a^3 + b^3 + c^3, c], [c]],
+        [[a + b + c, a^2 + b^2 + c^2, a^3 + b^3 + c^3, c], [a, b]],
         [a + b, a * b]
     ]
 ]:

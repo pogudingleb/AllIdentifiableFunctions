@@ -7,7 +7,7 @@ cases := [
             diff(x2(t), t) - (-c * x2(t) + d * x1(t) * x2(t) + u(t)),
             y(t) - x1(t)
         ],
-        [x1, x2], [y], [u], [a, b, c, d]],
+        [x1, x2], [y, u], [a, b, c, d]],
         [y(t) * diff(diff(y(t), t), t) - diff(y(t), t)^2 - y(t)^2 * diff(y(t), t) * d + y(t) * diff(y(t), t) * c + a * d * y(t)^3 + u(t) * y(t)^2 * b - a * c * y(t)^2]
     ],
     [
@@ -22,7 +22,7 @@ cases := [
             y3(t) - eA(t), 
             y4(t) - eC(t)
         ],
-        [xa, xb, xc, eA, eC], [y2, y1, y3, y4], [], [k1, k2, eB]],
+        [xa, xb, xc, eA, eC], [y2, y1, y3, y4], [k1, k2, eB]],
         [
             k1 * k2 * (y2(t) - y1(t) * y4(t)) - eB * k1 * diff(y1(t), t) - k2 * y3(t) * diff(y1(t), t) - y3(t) * diff(diff(y1(t), t), t),
             diff(diff(diff(y1(t), t), t), t) + (k1 + k2) * diff(diff(y1(t), t), t) + k1 * k2 * diff(y1(t), t),

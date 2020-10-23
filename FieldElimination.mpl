@@ -38,9 +38,10 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-FieldElimination := proc(gens, vars_to_elim)
+FieldElimination := proc(gens, vars_to_remain)
+    vars_to_keep := {op(vars_to_remain)}:
     all_vars := indets(gens):
-    vars_to_keep := {op(all_vars)} minus {op(vars_to_elim)}:
+    vars_to_elim := {op(all_vars)} minus vars_to_keep:
     subs_dupl := map(v -> v = cat(v, _aux), all_vars):
     elim_dupl := subs(subs_dupl, vars_to_elim):
     keep_dupl := subs(subs_dupl, vars_to_keep):
@@ -64,3 +65,5 @@ end proc:
 CompareFields := proc(gens_l, gens_r)
     return evalb(FieldToIdeal(gens_l) = FieldToIdeal(gens_r)) 
 end proc:
+
+#------------------------------------------------------------------------------
