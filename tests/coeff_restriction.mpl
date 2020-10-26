@@ -2,17 +2,27 @@ read "../ComputeIdentifiableFunctions.mpl":
 
 cases := [
     [
-        [[a * x + b * y + c * y^2, d * y], [a, b, c, d], [c, d]],
-        [x, y]
+        [PolynomialIdeal([a * x + b * y + c * y^2, d * y], variables={x, y}), PolynomialIdeal([a - a_aux, b - b_aux], variables={a_aux, b_aux})],
+        PolynomialIdeal([x, y])
     ],
     [
-        [[a * x + b * z + c * y^2, d * y], [a, b, c, d], [c, d]],
-        [a * x + b * z, y]
+        [PolynomialIdeal([a * x + b * z + c * y^2, d * y], variables={x, y, z}), PolynomialIdeal([a - a_aux, b - b_aux], variables={a_aux, b_aux})],
+        PolynomialIdeal([a * x + b * z, y], variables={x, y, z})
     ],
-    # MQS, Example page 7, radical version
     [
-        [[x1 * z1  - z2, x2 * z2 - z3, z3^3], [x1, x2], []],
-        [z1, z2, z3]
+        [PolynomialIdeal([a - a_aux], variables={a_aux}), PolynomialIdeal([a - a_aux, b - b_aux], variables={a_aux, b_aux})],
+        PolynomialIdeal([a - a_aux], variables={a_aux})
+    ],
+    [
+        [PolynomialIdeal([-a - b + a_aux + b_aux, -a * a_aux + a * b + a_aux^2 - a_aux * b], variables={a_aux, b_aux}), PolynomialIdeal([-a + a_aux, -b + b_aux], variables={a_aux, b_aux})],
+        PolynomialIdeal([-a - b + a_aux + b_aux, -a * a_aux + a * b + a_aux^2 - a_aux * b], variables={a_aux, b_aux})
+    ],
+    [
+        [
+            PolynomialIdeal([-a - b + a_aux + b_aux, -a * a_aux + a * b + a_aux^2 - a_aux * b], variables={a_aux, b_aux}), 
+            PolynomialIdeal([-a - b + a_aux + b_aux, -a * a_aux + a * b + a_aux^2 - a_aux * b, c - c_aux], variables={a_aux, b_aux, c_aux})
+        ],
+        PolynomialIdeal([-a - b + a_aux + b_aux, -a * a_aux + a * b + a_aux^2 - a_aux * b], variables={a_aux, b_aux})
     ]
 ];
 
@@ -22,15 +32,14 @@ num_failed := 0:
 for case in cases do
     input := case[1]:
     correct := case[2]:
-    poly_vars := {op(indets(input[1]))} minus {op(input[2])}:
-    if Groebner[Basis](FieldCoefficientRestriction(op(input)), tdeg(op(poly_vars))) = Groebner[Basis](correct, tdeg(op(poly_vars))) then
-        printf("PASSED");
+    if IdealsEq(FieldCoefficientRestriction(op(input)), correct) then
+        printf("PASSED\n");
         num_passed := num_passed + 1:
     else
-        printf("FAILED");
+        printf("FAILED\n");
         num_failed := num_failed + 1:
-        print("Expected: ", Groebner[Basis](FieldCoefficientRestriction(op(input)), tdeg(op(poly_vars))));
-        print("Got: ", Groebner[Basis](correct, tdeg(op(poly_vars))));
+        print("Expected: ", correct);
+        print("Got: ", FieldCoefficientRestriction(op(input)));
     end if:
 end do:
 
