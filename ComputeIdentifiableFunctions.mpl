@@ -90,7 +90,7 @@ end proc:
 FilterGenerators := proc(ideal)
     # Input: ideal over a rational function field
     # Computes a simplified set of generators of the field of definition
-    local gb, gens, p, cf, lc, gsorted, result, big_ideal, cur_ideal, g, new_ideal::
+    local gb, gens, p, cf, lc, gsorted, result, big_ideal, cur_ideal, g, new_ideal:
     gb := Groebner[Basis](ideal, tdeg(op(IdealInfo[Variables](ideal)))):
     gens := {}:
     for p in gb do
@@ -280,7 +280,7 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 1})
+SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
     local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form: 
 
     states, ios, params := op(ParseInput(model)):
@@ -325,7 +325,7 @@ end proc:
 
 ParseInput := proc(model)
    local all_symbols, x_functions, io_functions, params, states, ios:
-   all_symbols := foldl(`union`, op( map(e -> indets(e), model) )) minus {t}: 
+   all_symbols := foldl(`union`, op( map(e -> indets(e), model) )) minus {t}:
    x_functions := map(f -> int(f, t), select( f -> type(int(f, t), function(name)), all_symbols )):
    io_functions := select( f -> not type(int(f, t), function(name)) and type(f, function(name)) and not f in x_functions, all_symbols ):
    params := [op(select(f -> not type(f, function(name)) and not type(int(f, t), function(name)), all_symbols))]:
@@ -336,7 +336,7 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 1, simplified_generators := false})
+MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_generators := false})
     # Input: model - ODE model defined as a list of differential polynomials
     # Computes the bound from Theorem REF. Returns a list containing
     # 1. the bound
