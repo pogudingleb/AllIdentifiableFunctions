@@ -33,7 +33,7 @@ num_failed := 0:
 for case in cases do
     input := case[1]:
     correct := case[2]:
-    if CompareFields(FieldIntersection(op(input)), correct) then
+    if IdealsEq(FieldIntersection(op(input)), FieldToIdeal(correct)) then
         printf("PASSED\n");
         num_passed := num_passed + 1:
     else

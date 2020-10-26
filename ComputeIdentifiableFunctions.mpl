@@ -66,8 +66,8 @@ FieldCoefficientRestriction := proc(J, msq_for_subfield)
     # Selecting prime components as in Remark on page 377 in MSQ-paper
     primes_to_keep := []:
     for P in components do
-        #print("Prime:", P):
-        #print("Elim: ", EliminationIdeal(P, coeff_aux), IdealInfo[Variables](P)):
+        # Going through the prime decomposition of the MSQ-deal mimics the
+        # working over the restricted field (which is what has been done in the MSQ-paper)
         elim_P := EliminationIdeal(P, coeff_aux):
         for comp in msq_components do
             if elim_P subset comp then
@@ -87,8 +87,18 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-FilterGenerators := proc(gens)
-    local gsorted, result, big_ideal, cur_ideal, new_ideal, g:
+FilterGenerators := proc(ideal)
+    # Input: ideal over a rational function field
+    # Computes a simplified set of generators of the field of definition
+    local gb, gens, p, cf, lc, gsorted, result, big_ideal, cur_ideal, g, new_ideal::
+    gb := Groebner[Basis](ideal, tdeg(op(IdealInfo[Variables](ideal)))):
+    gens := {}:
+    for p in gb do
+        cf := sort([coeffs(p, IdealInfo[Variables](ideal))], (a, b) -> length(convert(a, string)) < length(convert(b, string))):
+        lc := cf[1]:
+        cf := map(c -> c / lc, cf):
+        gens := {op(gens), op(cf[2..nops(cf)])}:
+    end do:
     gsorted := sort([op(gens)], (a, b) -> length(convert(a, string)) < length(convert(b, string)));
     result := {}:
     big_ideal := FieldToIdeal(gens):
@@ -110,8 +120,8 @@ end proc:
 
 FieldIntersection := proc(gens_left, gens_right)
     # Input: gens_left and gens_right - generators of a subfields E and F of a field of rational functions
-    # If terminates, resturns the generators of the intersection of E and F
-    # Is guaranteed to terminate if at least one of E and F is radical (see REF)
+    # If terminates, resturns an ideal with field of definition being the intersection of generators of E and F
+    # Is guaranteed to terminate if at least one of E and F is algebraically closed in rational functions (see REF)
     # Implementation below is a version of Algorithm 2.38 from https://mediatum.ub.tum.de/doc/685465/document.pdf
     local msq_left, msq_right, poly_vars, coeff_vars, Ii, Ji, gb, result, p, cf, lc;
 
@@ -126,20 +136,9 @@ FieldIntersection := proc(gens_left, gens_right)
     while not IdealsEq(Ii, Ji) do
         Ii := FieldCoefficientRestriction(Ji, msq_right):
         Ji := FieldCoefficientRestriction(Ii, msq_left):
-        #print("============================"):
-        #print(Ii, msq_right):
-        #print(Ji, msq_left):
     end do:
 
-    gb := Groebner[Basis](IdealInfo[Generators](Ji), tdeg(op(poly_vars))):
-    result := {}:
-    for p in gb do
-        cf := [coeffs(p, poly_vars)]:
-        lc := cf[1]:
-        cf := map(c -> c / lc, cf):
-        result := {op(result), op(cf[2..nops(cf)])}:
-    end do:
-    return result:
+    return Ji:
 end proc:
 
 #------------------------------------------------------------------------------
@@ -216,7 +215,7 @@ DecomposePolynomial := proc(p, vars_main, vars_coef, infolevel)
     cf := [coeffs(collect(p, vars_main, 'distributed'), vars_main, 'monoms')]:
     monoms := [monoms]:
     result_cf := []:
-    result_monom := []:
+    result_monom := Array([]):
     if infolevel > 0 then
         printf("        Number of monomials: %a\n", nops(cf)):
     end:
@@ -231,13 +230,13 @@ DecomposePolynomial := proc(p, vars_main, vars_coef, infolevel)
         end do:
         if c <> 0 then
             result_cf := [op(result_cf), c]:
-            result_monom := [op(result_monom), m]:
+            ArrayTools[Append](result_monom, m):
         end if:
     end do:
     if infolevel > 0 then
         printf("        Reduced to: %a\n", nops(result_cf)):
     end:
-    return [result_cf, result_monom]:
+    return [result_cf, convert(result_monom, list)]:
 end proc:
 
 #------------------------------------------------------------------------------
@@ -281,13 +280,10 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-SingleExperimentIdentifiableFunction := proc(model, {infolevel := 1})
-    local model_data, states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form: 
+SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 1})
+    local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form: 
 
-    model_data := ParseInput(model):
-    states := model_data[1]:
-    ios := model_data[2]:
-    params := model_data[3]:
+    states, ios, params := op(ParseInput(model)):
 
     # Step 1
     if infolevel > 0 then
@@ -336,6 +332,60 @@ ParseInput := proc(model)
    states := [op(map(FunctionToVariable, x_functions))]:
    ios := [op(map(FunctionToVariable, io_functions))]:
    return [states, ios, params]:
+end proc:
+
+#------------------------------------------------------------------------------
+
+MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 1, simplified_generators := false})
+    # Input: model - ODE model defined as a list of differential polynomials
+    # Computes the bound from Theorem REF. Returns a list containing
+    # 1. the bound
+    # 2. the list of lists of coefficients of the IO-equations (after compression)
+    # 3. (optional) simplified set of generators of the field of multi-experiment identifiable functions
+
+    local states, ios, params, io_eqs, io_coeffs, io_coef, wrnsk, s, roll, wrnsk_sub, r, bound, 
+    generators, i, eq, result:
+    states, ios, params := op(ParseInput(model)):
+
+    if infolevel > 0 then
+        printf("Computing input-output equations\n"):
+    end if:
+    io_eqs := GetIOEquations(model, states, ios, params, infolevel):
+    if infolevel > 0 then
+        printf("Total number of io-equations: %a\n", nops(io_eqs)):
+    end if:
+ 
+    io_coeffs := []:
+    bound := 0:
+    for eq in io_eqs do
+        if infolevel > 0 then
+            printf("Constructing the Wronskian\n"):
+        end if:
+        wrnsk, io_coef := op(ConstructWronskian(eq, model, states, ios, params, infolevel)):
+        io_coeffs := [op(io_coeffs), io_coef]:
+
+        # in the notation of the theorem
+        s := nops(io_coef) - 1:
+        roll := rand(1..15):
+        wrnsk_sub := map(v -> v = roll(), indets(wrnsk)):
+        r := LinearAlgebra[Rank](subs(wrnsk_sub, wrnsk)):
+        bound := max(bound, s - r + 1)
+    end do:
+
+    result := [bound, io_coeffs]:
+
+    if simplified_generators then
+        generators := {}:
+        for io_coef in io_coeffs do
+             io_coef := sort(io_coef, (a, b) -> length(convert(a, string)) < length(convert(b, string)));
+             for i from 2 to nops(io_coef) do
+                 generators := {op(generators), io_coef[i] / io_coef[1]}:
+             end do:
+        end do:
+        result := [op(result), FilterGenerators(FieldToIdeal(generators))]:
+    end if:
+
+    return result:
 end proc:
 
 #------------------------------------------------------------------------------

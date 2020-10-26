@@ -6,7 +6,7 @@ cases := [
             diff(x1(t), t) - (a * x1(t) - b * x1(t) * x2(t) + u(t)),
             diff(x2(t), t) - (-c * x2(t) + d * x1(t) * x2(t)),
             y(t) - x1(t)
-        ], {a, c, d}
+        ], [1, {a, c, d}]
     ],
     [
         [
@@ -19,8 +19,8 @@ cases := [
             y2(t) - xc(t),
             y3(t) - eA(t), 
             y4(t) - eC(t)
-        ], {k1 + k2, k1 * k2}
-    ] 
+        ], [2, {k1, k2, eB}]
+    ]
 ]:
 
 num_passed := 0:
@@ -29,9 +29,8 @@ num_failed := 0:
 for case in cases do
     input := case[1]:
     correct := case[2]:
-    result := SingleExperimentIdentifiableFunctions(input, infolevel=0):
-    print(result):
-    if CompareFields(result, correct) then
+    result := MultiExperimentIdentifiableFunctions(input, infolevel=0, simplified_generators=true):
+    if CompareFields(result[3], correct[2]) and result[1] = correct[1] then
         printf("PASSED\n");
         num_passed := num_passed + 1:
     else
