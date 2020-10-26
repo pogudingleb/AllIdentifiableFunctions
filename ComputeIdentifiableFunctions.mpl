@@ -7,6 +7,7 @@ with(PolynomialIdeals):
 #------------------------------------------------------------------------------
 
 IdealsEq := proc(A, B)
+    # Checks whether polynomial ideals are equal
     return evalb((A subset B) and (B subset A)):
 end:
 
@@ -143,8 +144,8 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-# for testing
 CompareFields := proc(gens_l, gens_r)
+    # Checks whether gens_l and gens_r generate the same subfield of rational functions
     return IdealsEq(FieldToIdeal(gens_l), FieldToIdeal(gens_r)):
 end proc:
 
@@ -158,7 +159,25 @@ with(DifferentialAlgebra):
 
 #------------------------------------------------------------------------------
 
+ExtractDenominator := proc(model)
+    # Input: model a list of rational functions
+    # returns the function multiplied by their denominators and 
+    # an inequality corresponding to the LCM of the denominators
+    local common_denom, r;
+    common_denom := 1:
+    for r in model do
+        common_denom := lcm(common_denom, denom(r)):
+    end do:
+    return [op(map(p -> denom(p) * p, model)), common_denom <> 0]:
+end proc:
+
+#------------------------------------------------------------------------------
+
 GetIOEquations := proc(model, states, ios, params, infolevel)
+    # Input: model - list of differential polynomials defining the model
+    #        states, ios, params - list of names of state variables, input-output variables
+    #                              and parameter, respectively
+    # Computes a list of input-output equations of the model
     local Relim, Rorig, charsets, chset_orig, general_comps, general, c, e, gen_comp, io_eqs:
 
     Relim := DifferentialRing(blocks = [[op(states)], op(ios)], derivations = [t], parameters = params):
@@ -171,7 +190,7 @@ GetIOEquations := proc(model, states, ios, params, infolevel)
     
     # picking the general component
     if infolevel > 0 then
-        printf("     Selecting the general component\n"):
+        printf("    Selecting the general component\n"):
     end if:
     general_comps := []:
     for c in charsets do
@@ -211,6 +230,10 @@ end proc:
 #------------------------------------------------------------------------------
 
 DecomposePolynomial := proc(p, vars_main, vars_coef, infolevel)
+    # Input: p - polynomial in two groups of variables: vars_main and vars_coef
+    # Computes a decomposition of minimal length of p as a linear combination 
+    # of products A * B, where A is a polynomial in vars_main and B 
+    # is a polynomial in vars_coef return two lists: list of A's and list of B's
     local cf, monoms, result_cf, result_monom, i, c, m, j, lc, lm, coeff_in_c:
     cf := [coeffs(collect(p, vars_main, 'distributed'), vars_main, 'monoms')]:
     monoms := [monoms]:
@@ -242,6 +265,11 @@ end proc:
 #------------------------------------------------------------------------------
 
 ConstructWronskian := proc(io_eq, model, states, ios, params, infolevel)
+    # Input - the same as for GetIOEquations + one IO-equation
+    # Computes the Wronskian for this equation using the representation
+    # given by DecomposePolynomial. Return a pair of the Wronskian
+    # reduced modulo the original system and a list of coefficients
+    # of the compressed io_eq
     local diff_to_ord, v, vt, h, v_ord, vd, p, decomp, diff_polys, Rorig, chset_orig,
     M, yus, yus_reduced, M_sub:
 
@@ -281,6 +309,8 @@ end proc:
 #------------------------------------------------------------------------------
 
 SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
+    # Input: model - ODE model represented as a list of differential polynomials
+    # Computes generators of the field of single-identifiable functions
     local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form: 
 
     states, ios, params := op(ParseInput(model)):
@@ -289,7 +319,8 @@ SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
     if infolevel > 0 then
         printf("Step 1: Computing input-output equations\n"):
     end if:
-    io_eqs := GetIOEquations(model, states, ios, params, infolevel):
+    model_denomfree := ExtractDenominator(model):
+    io_eqs := GetIOEquations(model_denomfree, states, ios, params, infolevel):
     if infolevel > 0 then
         printf("Total number of io-equations: %a\n", nops(io_eqs)):
     end if:
@@ -300,7 +331,7 @@ SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
         if infolevel > 0 then
             printf("Step 2: Constructing the Wronskian\n"):
         end if:
-        wrnsk := ConstructWronskian(eq, model, states, ios, params, infolevel)[1]:
+        wrnsk := ConstructWronskian(eq, model_denomfree, states, ios, params, infolevel)[1]:
         # Step 3
         if infolevel > 0 then
             printf("Step 3: Computing the reduced row echelon form of the Wronskian\n"):
@@ -350,7 +381,8 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     if infolevel > 0 then
         printf("Computing input-output equations\n"):
     end if:
-    io_eqs := GetIOEquations(model, states, ios, params, infolevel):
+    model_denomfree := ExtractDenominator(model):
+    io_eqs := GetIOEquations(model_denomfree, states, ios, params, infolevel):
     if infolevel > 0 then
         printf("Total number of io-equations: %a\n", nops(io_eqs)):
     end if:
@@ -361,7 +393,7 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
         if infolevel > 0 then
             printf("Constructing the Wronskian\n"):
         end if:
-        wrnsk, io_coef := op(ConstructWronskian(eq, model, states, ios, params, infolevel)):
+        wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, infolevel)):
         io_coeffs := [op(io_coeffs), io_coef]:
 
         # in the notation of the theorem
