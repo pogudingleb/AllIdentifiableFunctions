@@ -264,8 +264,8 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-ConstructWronskian := proc(io_eq, model, states, ios, params, infolevel)
-    # Input - the same as for GetIOEquations + one IO-equation
+ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infolevel)
+    # Input - the same as for GetIOEquations + one IO-equation + flag subs_param
     # Computes the Wronskian for this equation using the representation
     # given by DecomposePolynomial. Return a pair of the Wronskian
     # reduced modulo the original system and a list of coefficients
@@ -297,8 +297,19 @@ ConstructWronskian := proc(io_eq, model, states, ios, params, infolevel)
     end if:
     M := VectorCalculus[Wronskian](diff_polys, t):
     yus := indets(M) minus {t}:
+
     if infolevel > 0 then
         printf("    Reducing the Wronskian\n"):
+    end if:
+    if subs_param then
+        roll := rand(1..15):
+        params_sub := map(v -> v = roll(), params):
+        Rorig := DifferentialRing(blocks = [op(ios), op(states)], derivations = [t]):
+        chset_orig := RosenfeldGroebner(subs(params_sub, model), Rorig)[1]:
+        M := subs(params_sub, M):
+    else
+        Rorig := DifferentialRing(blocks = [op(ios), op(states)], derivations = [t], parameters = params):
+        chset_orig := RosenfeldGroebner(model, Rorig)[1]:
     end if:
     yus_reduced := map(p -> p = NormalForm(p, chset_orig), yus):
     M_sub := subs(yus_reduced, M):
@@ -331,7 +342,7 @@ SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
         if infolevel > 0 then
             printf("Step 2: Constructing the Wronskian\n"):
         end if:
-        wrnsk := ConstructWronskian(eq, model_denomfree, states, ios, params, infolevel)[1]:
+        wrnsk := ConstructWronskian(eq, model_denomfree, states, ios, params, false, infolevel)[1]:
         # Step 3
         if infolevel > 0 then
             printf("Step 3: Computing the reduced row echelon form of the Wronskian\n"):
@@ -393,11 +404,12 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
         if infolevel > 0 then
             printf("Constructing the Wronskian\n"):
         end if:
-        wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, infolevel)):
+        wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, true, infolevel)):
         io_coeffs := [op(io_coeffs), io_coef]:
 
         # in the notation of the theorem
         s := nops(io_coef) - 1:
+        # substitution does not increase the rank, so the resulting bound will be correct
         roll := rand(1..15):
         wrnsk_sub := map(v -> v = roll(), indets(wrnsk)):
         r := LinearAlgebra[Rank](subs(wrnsk_sub, wrnsk)):
