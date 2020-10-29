@@ -39,7 +39,7 @@ for case in cases do
     input := case[1]:
     print(input);
     correct := case[2]:
-    result := GetIOEquations(op(input)):
+    result := GetIOEquations(op(input), 0):
     passed := true:
     if nops(result) <> nops(correct) then
         passed := false:

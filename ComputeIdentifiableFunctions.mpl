@@ -173,6 +173,23 @@ end proc:
 
 #------------------------------------------------------------------------------
 
+CheckReducibilitySet := proc(polys, charset)
+    # Input: polys - list of differential polynomials
+    #        charset - a characteristic set
+    # Returns true iff all the polynomials are reduced to zero wrt to the charset
+    local result:
+    result := true:
+    for e in polys do
+        if NormalForm(e, charset) <> 0 then
+            result := false:
+            break:
+        end if:
+    end do:
+    return result:
+end proc:
+
+#------------------------------------------------------------------------------
+
 GetIOEquations := proc(model, states, ios, params, infolevel)
     # Input: model - list of differential polynomials defining the model
     #        states, ios, params - list of names of state variables, input-output variables
@@ -182,33 +199,42 @@ GetIOEquations := proc(model, states, ios, params, infolevel)
 
     Relim := DifferentialRing(blocks = [[op(states)], op(ios)], derivations = [t], parameters = params):
     Rorig := DifferentialRing(blocks = [op(ios), op(states)], derivations = [t], parameters = params):
-    if infolevel > 0 then
-        printf("    Computing the characteristic set\n"):
-    end if:
-    charsets := RosenfeldGroebner(model, Relim):
     chset_orig := RosenfeldGroebner(model, Rorig)[1]:
-    
-    # picking the general component
+ 
     if infolevel > 0 then
-        printf("    Selecting the general component\n"):
+        printf("    Computing the characteristic set (singsol = none)\n"):
     end if:
-    general_comps := []:
-    for c in charsets do
-        general := true:
-        for e in Equations(c) do
-            if NormalForm(e, chset_orig) <> 0 then
-                general := false:
-                break:
+    charsets := RosenfeldGroebner(model, Relim, singsol = none):
+    
+    if CheckReducibilitySet(Equations(charsets[1]), chset_orig) then
+        gen_comp := charsets[1]:
+    else
+        if infolevel > 0 then
+            printf("    Did not pick the right component. Using singsol = all\n"):
+        end if:
+        charsets := RosenfeldGroebner(model, Relim):
+    
+        if infolevel > 0 then
+            printf("    Selecting the general component\n"):
+        end if:
+        general_comps := []:
+        for c in charsets do
+            general := true:
+            for e in Equations(c) do
+                if NormalForm(e, chset_orig) <> 0 then
+                    general := false:
+                    break:
+                end if:
+            end do:
+            if general then
+                general_comps := [op(general_comps), c]:
             end if:
         end do:
-        if general then
-            general_comps := [op(general_comps), c]:
+        if nops(general_comps) > 1 then
+            print("More than one component is considered general!", general_comps):
         end if:
-    end do:
-    if nops(general_comps) > 1 then
-        print("More than one component is considered general!", general_comps):
+        gen_comp := general_comps[1]:
     end if:
-    gen_comp := general_comps[1]:
     io_eqs := Equations(gen_comp, leader < parse(cat(states[-1], "(t)"))):
     return io_eqs:
 end proc:
@@ -378,7 +404,7 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_generators := false})
+MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_generators := false, no_bound := false})
     # Input: model - ODE model defined as a list of differential polynomials
     # Computes the bound from Theorem REF. Returns a list containing
     # 1. the bound
@@ -401,19 +427,23 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     io_coeffs := []:
     bound := 0:
     for eq in io_eqs do
-        if infolevel > 0 then
-            printf("Constructing the Wronskian\n"):
+        if no_bound then
+            io_coef := DecomposePolynomial(eq, indets(eq) minus {op(params)}, params, infolevel)[1]:
+        else
+            if infolevel > 0 then
+                printf("Constructing the Wronskian\n"):
+            end if:
+            wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, true, infolevel)):
+    
+            # in the notation of the theorem
+            s := nops(io_coef) - 1:
+            # substitution does not increase the rank, so the resulting bound will be correct
+            roll := rand(1..15):
+            wrnsk_sub := map(v -> v = roll(), indets(wrnsk)):
+            r := LinearAlgebra[Rank](subs(wrnsk_sub, wrnsk)):
+            bound := max(bound, s - r + 1)
         end if:
-        wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, true, infolevel)):
         io_coeffs := [op(io_coeffs), io_coef]:
-
-        # in the notation of the theorem
-        s := nops(io_coef) - 1:
-        # substitution does not increase the rank, so the resulting bound will be correct
-        roll := rand(1..15):
-        wrnsk_sub := map(v -> v = roll(), indets(wrnsk)):
-        r := LinearAlgebra[Rank](subs(wrnsk_sub, wrnsk)):
-        bound := max(bound, s - r + 1)
     end do:
 
     result := [bound, io_coeffs]:
