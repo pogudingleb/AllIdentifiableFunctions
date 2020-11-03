@@ -15,7 +15,7 @@ model := [
 ]:
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
-printf("The bound for the numer of experiments is %a, this means that the fields of single-experiment and multi-experiment identifiable functions coincide, and they are equal to: %a\n", me[1], me[3]):
+printf("The bound for the number of experiments is %a, this means that the fields of single-experiment and multi-experiment identifiable functions coincide, and they are equal to: %a\n", me[1], me[3]):
 
 # Cummulative incidence observations
 # using change of variables Ninv := 1 / N to simplify the computation
@@ -29,4 +29,4 @@ model := [
 ]:
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true, infolevel=1):
-printf("The bound for the numer of experiments is %a, this means that the field of multi-experiment identifiable functions is the same, %a\n", me[1], me[3]):
+printf("The bound for the number of experiments is %a, this means that the field of multi-experiment identifiable functions is the same, %a\n", me[1], me[3]):
