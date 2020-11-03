@@ -43,5 +43,5 @@ printf("The coefficients of the only input-output equation have the following de
 # In the notation of Section 5.3
 ns := sort(map(p -> CountNonNumeric(p, f), result[2][1])):
 n := ns[1]:
-printf("Remark 22 implies that the number of experiments for the case when f is a known parameter different in different experiments is %a\n", max(n + min(ns[2...]), max(ns[2..]))):
+printf("Section 5.3 implies that the number of experiments for the case when f is a known parameter different in different experiments is %a\n", max(n + min(ns[2...]), max(ns[2..]))):
 
