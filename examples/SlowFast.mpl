@@ -19,4 +19,4 @@ printf("Single-experiment identifiable functions: %a\n", SingleExperimentIdentif
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
 printf("The multi-experiment identifiable functions are %a; This is not the same as for a single experiment!\n", me[3]):
-printf("The bound from the theorem is %a showing that two experiments are sufficient to identify these functions\n", me[1]):
+printf("The bound from the theorem is %a showing that %a experiments are sufficient to identify these functions\n", me[1], me[1]):
