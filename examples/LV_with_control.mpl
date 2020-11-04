@@ -12,4 +12,4 @@ model := [
 printf("Single-experiment identifiable functions: %a\n", SingleExperimentIdentifiableFunctions(model)):
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
-printf("The bound for the numer of experiments is %a, this means that the field of multi-experiment identifiable functions is the same, %a\n", me[1], me[3]):
+printf("The bound for the number of experiments is %a, this means that the field of multi-experiment identifiable functions is the same, %a\n", me[1], me[3]):
