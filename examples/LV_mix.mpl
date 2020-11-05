@@ -5,7 +5,7 @@ read "../ComputeIdentifiableFunctions.mpl";
 # Auxiliary function for counting nonconstant coefficients
 
 CountNonNumeric := proc(p, var)
-    local result:
+    local result, c:
     result := 0:
     for c in coeffs(p, var) do
         if not type(c, numeric) then

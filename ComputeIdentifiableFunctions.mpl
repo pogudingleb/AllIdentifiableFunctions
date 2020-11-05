@@ -177,7 +177,7 @@ CheckReducibilitySet := proc(polys, charset)
     # Input: polys - list of differential polynomials
     #        charset - a characteristic set
     # Returns true iff all the polynomials are reduced to zero wrt to the charset
-    local result:
+    local result, e:
     result := true:
     for e in polys do
         if NormalForm(e, charset) <> 0 then
@@ -297,7 +297,7 @@ ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infole
     # reduced modulo the original system and a list of coefficients
     # of the compressed io_eq
     local diff_to_ord, v, vt, h, v_ord, vd, p, decomp, diff_polys, Rorig, chset_orig,
-    M, yus, yus_reduced, M_sub:
+    M, yus, yus_reduced, M_sub, roll, params_sub:
 
     diff_to_ord := {}:
     for v in ios do
@@ -348,7 +348,7 @@ end proc:
 SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
     # Input: model - ODE model represented as a list of differential polynomials
     # Computes generators of the field of single-identifiable functions
-    local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form: 
+    local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form, model_denomfree: 
 
     states, ios, params := op(ParseInput(model)):
 
@@ -412,7 +412,7 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     # 3. (optional) simplified set of generators of the field of multi-experiment identifiable functions
 
     local states, ios, params, io_eqs, io_coeffs, io_coef, wrnsk, s, roll, wrnsk_sub, r, bound, 
-    generators, i, eq, result:
+    generators, i, eq, result, model_denomfree:
     states, ios, params := op(ParseInput(model)):
 
     if infolevel > 0 then
