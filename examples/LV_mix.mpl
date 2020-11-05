@@ -7,7 +7,7 @@ read "../ComputeIdentifiableFunctions.mpl";
 CountNonNumeric := proc(p, var)
     local result:
     result := 0:
-    for c in coeffs(var, p) do
+    for c in coeffs(p, var) do
         if not type(c, numeric) then
             result := result + 1:
         end if:
@@ -39,9 +39,9 @@ model := [
 # First we compute the bound and IO-equations considering f just as a parameter
 result := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
 printf("If f is considered as a parameter, the bound from the theorem will be %a\n", result[1]):
-printf("The coefficients of the only input-output equation have the following degrees in f: %a\n", map(p -> degree(p, f), result[2][1])):
 # In the notation of Section 5.3
 ns := sort(map(p -> CountNonNumeric(p, f), result[2][1])):
 n := ns[1]:
+printf("The number of non-numeric coefficients with respect to f (in the notation of Section 5.3: n, n1, n2, ...) in the coefficients of the only input-output equation are: %a\n", ns):
 printf("Section 5.3 implies that the number of experiments for the case when f is a known parameter different in different experiments is %a\n", max(n + min(ns[2...]), max(ns[2..]))):
 
