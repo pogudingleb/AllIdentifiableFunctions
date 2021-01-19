@@ -330,11 +330,11 @@ ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infole
     if subs_param then
         roll := rand(1..15):
         params_sub := map(v -> v = roll(), params):
-        Rorig := DifferentialRing(blocks = [op(ios), op(states)], derivations = [t]):
+        Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t]):
         chset_orig := RosenfeldGroebner(subs(params_sub, model), Rorig)[1]:
         M := subs(params_sub, M):
     else
-        Rorig := DifferentialRing(blocks = [op(ios), op(states)], derivations = [t], parameters = params):
+        Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t], parameters = params):
         chset_orig := RosenfeldGroebner(model, Rorig)[1]:
     end if:
     yus_reduced := map(p -> p = NormalForm(p, chset_orig), yus):
