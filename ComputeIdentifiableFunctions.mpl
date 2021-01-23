@@ -410,6 +410,12 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     # 1. the bound
     # 2. the list of lists of coefficients of the IO-equations (after compression)
     # 3. (optional) simplified set of generators of the field of multi-experiment identifiable functions
+    #
+    # Optional keyword arguments:
+    # 1. simplified_generators - if False, then just the coefficients of the IO-equations are returned.
+    #                            if True, they are being simplified (maybe be a substantial simplification)
+    #                            but this takes time
+    # 2. no_bound - if True, then bound for the number of experiments is not computed (may save a lot of time)
 
     local states, ios, params, io_eqs, io_coeffs, io_coef, wrnsk, s, roll, wrnsk_sub, r, bound, 
     generators, i, eq, result, model_denomfree:
