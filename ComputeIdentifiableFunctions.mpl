@@ -110,6 +110,13 @@ FilterGenerators := proc(ideal)
         end if:
         new_ideal := FieldToIdeal({op(result), g}):
         if new_ideal <> cur_ideal then
+            # a dirty hack to transform -1/a to a
+            if convert(g, string)[1] = "-" then
+                g := -g:
+            end:
+            if convert(g, string)[1] = "1" then
+                g := 1 / g:
+            end:
             result := {op(result), g}:
             cur_ideal := new_ideal:
         end if:
