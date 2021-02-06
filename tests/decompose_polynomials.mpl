@@ -16,7 +16,7 @@ for case in cases do
     input := case[1]:
     correct := case[2]:
     passed := true:
-    result := DecomposePolynomial(op(input)):
+    result := DecomposePolynomial(op(input), 0):
     if nops(result[1]) <> correct then
         passed := false:
     end if:

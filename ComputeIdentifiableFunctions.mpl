@@ -197,15 +197,15 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-GetIOEquations := proc(model, states, ios, params, infolevel)
+GetIOEquations := proc(model, states, inputs, outputs, params, infolevel)
     # Input: model - list of differential polynomials defining the model
-    #        states, ios, params - list of names of state variables, input-output variables
-    #                              and parameter, respectively
+    #        states, inputs, outputs, params - list of names of state, input, output variables
+    #                              and parameters, respectively
     # Computes a list of input-output equations of the model
     local Relim, Rorig, charsets, chset_orig, general_comps, general, c, e, gen_comp, io_eqs:
 
-    Relim := DifferentialRing(blocks = [[op(states)], op(ios)], derivations = [t], parameters = params):
-    Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t], parameters = params):
+    Relim := DifferentialRing(blocks = [[op(states)], op(outputs), [op(inputs)]], derivations = [t], arbitrary = params):
+    Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
     chset_orig := RosenfeldGroebner(model, Rorig)[1]:
  
     if infolevel > 0 then
@@ -297,16 +297,17 @@ end proc:
 
 #------------------------------------------------------------------------------
 
-ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infolevel)
+ConstructWronskian := proc(io_eq, model, states, inputs, outputs, params, state_space, infolevel)
     # Input - the same as for GetIOEquations + one IO-equation + flag subs_param
     # Computes the Wronskian for this equation using the representation
     # given by DecomposePolynomial. Return a pair of the Wronskian
     # reduced modulo the original system and a list of coefficients
     # of the compressed io_eq
     local diff_to_ord, v, vt, h, v_ord, vd, p, decomp, diff_polys, Rorig, chset_orig,
-    M, yus, yus_reduced, M_sub, roll, params_sub:
+    M, yus, yus_reduced, M_sub, roll, params_sub, ios, ps_sol, ps, i:
 
     diff_to_ord := {}:
+    ios := [op(inputs), op(outputs)]:
     for v in ios do
         vt := parse(cat(v, "(t)")):
         diff_to_ord := {op(diff_to_ord), vt = v}:
@@ -322,7 +323,7 @@ ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infole
     end if:
     decomp := DecomposePolynomial(p, map(e -> rhs(e), diff_to_ord), params, infolevel):
     diff_polys := map(p -> subs(map(e -> rhs(e) = lhs(e), diff_to_ord), p), decomp[2]):
-    Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t], parameters = params):
+    Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
     chset_orig := RosenfeldGroebner(model, Rorig)[1]:
     
     if infolevel > 0 then
@@ -334,17 +335,25 @@ ConstructWronskian := proc(io_eq, model, states, ios, params, subs_param, infole
     if infolevel > 0 then
         printf("    Reducing the Wronskian\n"):
     end if:
-    if subs_param then
-        roll := rand(1..15):
-        params_sub := map(v -> v = roll(), params):
-        Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t]):
-        chset_orig := RosenfeldGroebner(subs(params_sub, model), Rorig)[1]:
-        M := subs(params_sub, M):
+
+    if state_space <> [] then
+        ps_sol := GetPSSolution(state_space, nops(yus)):
+        yus_reduced := []:
+        for v in ios do
+            vt := parse(cat(v, "(t)")):
+            ps := subs(ps_sol, v(t)):
+            for i from 0 to nops(yus) - 1 do
+                yus_reduced := [op(yus_reduced), vt = subs({t = 0}, ps)]:
+                vt := diff(vt, t):
+                ps := diff(ps, t):
+            end do:
+        end do:
     else
-        Rorig := DifferentialRing(blocks = [op(ios), [op(states)]], derivations = [t], parameters = params):
+        Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
         chset_orig := RosenfeldGroebner(model, Rorig)[1]:
+        yus_reduced := map(p -> p = NormalForm(p, chset_orig), yus):
     end if:
-    yus_reduced := map(p -> p = NormalForm(p, chset_orig), yus):
+
     M_sub := subs(yus_reduced, M):
     M_sub := subs(map(x -> parse(cat(x, "(t)")) = x, states), M_sub):
     return [M_sub, decomp[1]]:
@@ -353,18 +362,19 @@ end proc:
 #------------------------------------------------------------------------------
 
 SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
-    # Input: model - ODE model represented as a list of differential polynomials
+    # Input: model - ODE model in the state-space form
     # Computes generators of the field of single-identifiable functions
-    local states, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form, model_denomfree: 
+    local states, inputs, outputs, model_eq, ios, params, io_eqs, si_gens, eq, wrnsk, echelon_form, model_denomfree: 
 
-    states, ios, params := op(ParseInput(model)):
+    states, inputs, outputs, params, model_eq := op(ParseInput(model)):
+    ios := [op(inputs), op(outputs)]:
 
     # Step 1
     if infolevel > 0 then
         printf("Step 1: Computing input-output equations\n"):
     end if:
-    model_denomfree := ExtractDenominator(model):
-    io_eqs := GetIOEquations(model_denomfree, states, ios, params, infolevel):
+    model_denomfree := ExtractDenominator(model_eq):
+    io_eqs := GetIOEquations(model_denomfree, states, inputs, outputs, params, infolevel):
     if infolevel > 0 then
         printf("Total number of io-equations: %a\n", nops(io_eqs)):
     end if:
@@ -375,7 +385,7 @@ SingleExperimentIdentifiableFunctions := proc(model, {infolevel := 0})
         if infolevel > 0 then
             printf("Step 2: Constructing the Wronskian\n"):
         end if:
-        wrnsk := ConstructWronskian(eq, model_denomfree, states, ios, params, false, infolevel)[1]:
+        wrnsk := ConstructWronskian(eq, model_denomfree, states, inputs, outputs, params, [], infolevel)[1]:
         # Step 3
         if infolevel > 0 then
             printf("Step 3: Computing the reduced row echelon form of the Wronskian\n"):
@@ -399,20 +409,25 @@ FunctionToVariable := proc(f):
 end proc:
 
 ParseInput := proc(model)
-   local all_symbols, x_functions, io_functions, params, states, ios:
-   all_symbols := foldl(`union`, op( map(e -> indets(e), model) )) minus {t}:
+   local all_symbols, x_functions, io_functions, params, states, ios, diff_polys, lhss, out_functions, in_functions, inputs, outputs:
+   diff_polys := map(eq -> lhs(eq) - rhs(eq), model):
+   all_symbols := foldl(`union`, op( map(e -> indets(e), diff_polys) )) minus {t}:
    x_functions := map(f -> int(f, t), select( f -> type(int(f, t), function(name)), all_symbols )):
    io_functions := select( f -> not type(int(f, t), function(name)) and type(f, function(name)) and not f in x_functions, all_symbols ):
+   lhss := map(eq -> lhs(eq), model):
+   out_functions := select(f -> f in lhss, io_functions):
+   in_functions := select(f -> not (f in lhss), io_functions):
    params := [op(select(f -> not type(f, function(name)) and not type(int(f, t), function(name)), all_symbols))]:
    states := [op(map(FunctionToVariable, x_functions))]:
-   ios := [op(map(FunctionToVariable, io_functions))]:
-   return [states, ios, params]:
+   inputs := [op(map(FunctionToVariable, in_functions))]:
+   outputs := [op(map(FunctionToVariable, out_functions))]:
+   return [states, inputs, outputs, params, diff_polys]:
 end proc:
 
 #------------------------------------------------------------------------------
 
 MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_generators := false, no_bound := false})
-    # Input: model - ODE model defined as a list of differential polynomials
+    # Input: model - ODE model in the state-space form
     # Computes the bound from Theorem REF. Returns a list containing
     # 1. the bound
     # 2. the list of lists of coefficients of the IO-equations (after compression)
@@ -424,15 +439,15 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     #                            but this takes time
     # 2. no_bound - if True, then bound for the number of experiments is not computed (may save a lot of time)
 
-    local states, ios, params, io_eqs, io_coeffs, io_coef, wrnsk, s, roll, wrnsk_sub, r, bound, 
+    local states, inputs, outputs, ios, params, model_eqs, io_eqs, io_coeffs, io_coef, wrnsk, s, roll, wrnsk_sub, r, bound, 
     generators, i, eq, result, model_denomfree:
-    states, ios, params := op(ParseInput(model)):
+    states, inputs, outputs, params, model_eqs := op(ParseInput(model)):
 
     if infolevel > 0 then
         printf("Computing input-output equations\n"):
     end if:
-    model_denomfree := ExtractDenominator(model):
-    io_eqs := GetIOEquations(model_denomfree, states, ios, params, infolevel):
+    model_denomfree := ExtractDenominator(model_eqs):
+    io_eqs := GetIOEquations(model_denomfree, states, inputs, outputs, params, infolevel):
     if infolevel > 0 then
         printf("Total number of io-equations: %a\n", nops(io_eqs)):
     end if:
@@ -446,14 +461,11 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
             if infolevel > 0 then
                 printf("Constructing the Wronskian\n"):
             end if:
-            wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, ios, params, true, infolevel)):
+            wrnsk, io_coef := op(ConstructWronskian(eq, model_denomfree, states, inputs, outputs, params, model, infolevel)):
     
             # in the notation of the theorem
             s := nops(io_coef) - 1:
-            # substitution does not increase the rank, so the resulting bound will be correct
-            roll := rand(1..15):
-            wrnsk_sub := map(v -> v = roll(), indets(wrnsk)):
-            r := LinearAlgebra[Rank](subs(wrnsk_sub, wrnsk)):
+            r := LinearAlgebra[Rank](wrnsk):
             bound := max(bound, s - r + 1)
         end if:
         io_coeffs := [op(io_coeffs), io_coef]:
@@ -473,6 +485,39 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     end if:
 
     return result:
+end proc:
+
+#------------------------------------------------------------------------------
+
+GetPSSolution := proc(model, ord)
+    # Input: model and integer ord
+    # Output: a truncated power series solution with random parameter values
+    # and initial conditions of order ord
+    local roll, states, inputs, outputs, params, model_eqs, model_sub,
+    x_funcs, x_sols, x_eqs, cur_ord, i, rhs_eval, total_sub, y_funcs, y_sols,
+    params_subs, input_subs:
+    roll := rand(1..15):
+    states, inputs, outputs, params, model_eqs := op(ParseInput(model)):
+    params_subs := map(p -> p = roll(), params):
+    input_subs := map(u -> parse(cat(u, "(t)")) = add([seq(roll() * t^i, i=0..ord)]), inputs):
+    model_sub := subs(params_subs, model):
+    model_sub := subs(input_subs, model_sub):
+    x_funcs := map(x -> parse(cat(x, "(t)")), states):
+    x_sols := map(x -> x = roll(), x_funcs):
+    x_eqs := map(x -> subs(model_sub, diff(x, t)), x_funcs):
+    
+    for cur_ord from 1 to ord do
+        for i from 1 to nops(x_funcs) do
+            rhs_eval := series(subs(x_sols, x_eqs[i]), t, ord + 1):
+            x_sols[i] := (lhs(x_sols[i]) = (rhs(x_sols[i]) + t^cur_ord * coeff(rhs_eval, t, cur_ord - 1) / cur_ord)):
+        end do:
+    end do:
+  
+    total_sub := [op(x_sols), op(params_subs), op(input_subs)]:
+    y_funcs := map(y -> parse(cat(y, "(t)")), outputs):
+    y_sols := map(y -> y = subs(total_sub, subs(model_sub, y)), y_funcs):
+  
+    return [op(y_sols), op(input_subs), op(params_subs), op(x_sols)]:
 end proc:
 
 #------------------------------------------------------------------------------

@@ -3,15 +3,15 @@
 read "../ComputeIdentifiableFunctions.mpl";
 
 model := [
-     diff(xa(t), t) + k1 * xa(t),
-     diff(xb(t), t) - k1 * xa(t) + k2 * xb(t),
-     diff(xc(t), t) - k2 * xb(t),
-     diff(eA(t), t),
-     diff(eC(t), t),
-     y1(t) - eA(t) * xa(t) - eB * xb(t) - eC(t) * xc(t),
-     y2(t) - xc(t),
-     y3(t) - eA(t), 
-     y4(t) - eC(t)
+     diff(xa(t), t) = -k1 * xa(t),
+     diff(xb(t), t) = k1 * xa(t) - k2 * xb(t),
+     diff(xc(t), t) = k2 * xb(t),
+     diff(eA(t), t) = 0,
+     diff(eC(t), t) = 0,
+     y1(t) = eA(t) * xa(t) + eB * xb(t) + eC(t) * xc(t),
+     y2(t) = xc(t),
+     y3(t) = eA(t), 
+     y4(t) = eC(t)
 ]:
 
 # Computing function identifiable from a single experiment

@@ -7,11 +7,11 @@ read "../ComputeIdentifiableFunctions.mpl";
 
 # Prevalence observations
 model := [
-  diff(S(t), t) - b * S(t) * In(t) / N,
-  diff(E(t), t) - b * S(t) * In(t) / N + nu * E(t),
-  diff(In(t), t) - nu * E(t) + a * In(t),
-  y(t) - In(t),
-  y2(t) - N
+  diff(S(t), t) = b * S(t) * In(t) / N,
+  diff(E(t), t) = b * S(t) * In(t) / N - nu * E(t),
+  diff(In(t), t) = nu * E(t) - a * In(t),
+  y(t) = In(t),
+  y2(t) = N
 ]:
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
@@ -20,12 +20,12 @@ printf("The bound for the number of experiments is %a, this means that the field
 # Cummulative incidence observations
 # using change of variables Ninv := 1 / N to simplify the computation
 model := [
-  diff(S(t), t) - b * S(t) * In(t) * Ninv,
-  diff(E(t), t) - b * S(t) * In(t) * Ninv + nu * E(t),
-  diff(In(t), t) - nu * E(t) + a * In(t),
-  diff(Cu(t), t) - nu * E(t),
-  y(t) - Cu(t),
-  y2(t) - Ninv
+  diff(S(t), t) = b * S(t) * In(t) * Ninv,
+  diff(E(t), t) = b * S(t) * In(t) * Ninv - nu * E(t),
+  diff(In(t), t) = nu * E(t) - a * In(t),
+  diff(Cu(t), t) = nu * E(t),
+  y(t) = Cu(t),
+  y2(t) = Ninv
 ]:
 
 me := MultiExperimentIdentifiableFunctions(model, simplified_generators=true, infolevel=1):

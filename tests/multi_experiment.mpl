@@ -3,22 +3,22 @@ read "../ComputeIdentifiableFunctions.mpl";
 cases := [
     [
         [
-            diff(x1(t), t) - (a * x1(t) - b * x1(t) * x2(t) + u(t)),
-            diff(x2(t), t) - (-c * x2(t) + d * x1(t) * x2(t)),
-            y(t) - x1(t)
+            diff(x1(t), t) = (a * x1(t) - b * x1(t) * x2(t) + u(t)),
+            diff(x2(t), t) = (-c * x2(t) + d * x1(t) * x2(t)),
+            y(t) = x1(t)
         ], [1, {a, c, d}]
     ],
     [
         [
-            diff(xa(t), t) + k1 * xa(t),
-            diff(xb(t), t) - k1 * xa(t) + k2 * xb(t),
-            diff(xc(t), t) - k2 * xb(t),
-            diff(eA(t), t),
-            diff(eC(t), t),
-            y1(t) - eA(t) * xa(t) - eB * xb(t) - eC(t) * xc(t),
-            y2(t) - xc(t),
-            y3(t) - eA(t), 
-            y4(t) - eC(t)
+            diff(xa(t), t) = k1 * xa(t),
+            diff(xb(t), t) = k1 * xa(t) - k2 * xb(t),
+            diff(xc(t), t) = k2 * xb(t),
+            diff(eA(t), t) = 0,
+            diff(eC(t), t) = 0,
+            y1(t) = eA(t) * xa(t) + eB * xb(t) + eC(t) * xc(t),
+            y2(t) = xc(t),
+            y3(t) = eA(t), 
+            y4(t) = eC(t)
         ], [2, {k1, k2, eB}]
     ]
 ]:
