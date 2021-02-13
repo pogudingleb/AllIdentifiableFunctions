@@ -435,8 +435,8 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
     # 3. (optional) simplified set of generators of the field of multi-experiment identifiable functions
     #
     # Optional keyword arguments:
-    # 1. simplified_generators - if False, then just the coefficients of the IO-equations are returned.
-    #                            if True, they are being simplified (maybe be a substantial simplification)
+    # 1. simplified_generators - if false, then just the coefficients of the IO-equations are returned.
+    #                            if true, they are being simplified (maybe be a substantial simplification)
     #                            but this takes time
     # 2. no_bound - if True, then bound for the number of experiments is not computed (may save a lot of time)
 
@@ -472,16 +472,17 @@ MultiExperimentIdentifiableFunctions := proc(model, {infolevel := 0, simplified_
         io_coeffs := [op(io_coeffs), io_coef]:
     end do:
 
-    result := [bound, io_coeffs]:
+    generators := {}:
+    for io_coef in io_coeffs do
+         io_coef := sort(io_coef, (a, b) -> length(convert(a, string)) < length(convert(b, string)));
+         for i from 2 to nops(io_coef) do
+             generators := {op(generators), io_coef[i] / io_coef[1]}:
+         end do:
+    end do:
+
+    result := [bound, generators]:
 
     if simplified_generators then
-        generators := {}:
-        for io_coef in io_coeffs do
-             io_coef := sort(io_coef, (a, b) -> length(convert(a, string)) < length(convert(b, string)));
-             for i from 2 to nops(io_coef) do
-                 generators := {op(generators), io_coef[i] / io_coef[1]}:
-             end do:
-        end do:
         result := [op(result), FilterGenerators(FieldToIdeal(generators))]:
     end if:
 

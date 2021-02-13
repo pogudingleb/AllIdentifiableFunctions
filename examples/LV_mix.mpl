@@ -41,7 +41,9 @@ printf("First we compute the bound and IO-equations considering f just as a para
 result := MultiExperimentIdentifiableFunctions(model, simplified_generators=true):
 printf("If we consider a different system with f being an unknown parameter with the same value for different experiments, the bound from the theorem will be %a\n", result[1]):
 # In the notation of Section 5.3
-ns := sort(map(p -> CountNonNumeric(p, f), result[2][1])):
+io_eq_coeffs := [expand(denom(result[2][1])), op(map(p -> expand(simplify(p * denom(result[2][1]))), result[2]))]:
+print(io_eq_coeffs):
+ns := sort(map(p -> CountNonNumeric(p, f), io_eq_coeffs)):
 n := ns[1]:
 printf("The number of non-numeric coefficients with respect to f (in the notation of Section 5.3: n, n1, n2, ...) in the coefficients of the only input-output equation are: %a\n", ns):
 printf("Section 5.3 implies that the number of experiments for the case when f is a known parameter different in different experiments is %a\n", max(n + min(ns[2...]), max(ns[2..]))):
