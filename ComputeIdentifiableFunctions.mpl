@@ -206,7 +206,7 @@ GetIOEquations := proc(model, states, inputs, outputs, params, infolevel)
     local Relim, Rorig, charsets, chset_orig, general_comps, general, c, e, gen_comp, io_eqs:
 
     Relim := DifferentialRing(blocks = [[op(states)], op(outputs), [op(inputs)]], derivations = [t], arbitrary = params):
-    Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
+    Rorig := DifferentialRing(blocks = [[op(outputs)], [op(states)], [op(inputs)]], derivations = [t], arbitrary = params):
     chset_orig := RosenfeldGroebner(model, Rorig)[1]:
  
     if infolevel > 0 then
@@ -324,7 +324,7 @@ ConstructWronskian := proc(io_eq, model, states, inputs, outputs, params, state_
     end if:
     decomp := DecomposePolynomial(p, map(e -> rhs(e), diff_to_ord), params, infolevel):
     diff_polys := map(p -> subs(map(e -> rhs(e) = lhs(e), diff_to_ord), p), decomp[2]):
-    Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
+    Rorig := DifferentialRing(blocks = [[op(outputs)], [op(states)], [op(inputs)]], derivations = [t], arbitrary = params):
     chset_orig := RosenfeldGroebner(model, Rorig)[1]:
     
     if infolevel > 0 then
@@ -350,7 +350,7 @@ ConstructWronskian := proc(io_eq, model, states, inputs, outputs, params, state_
             end do:
         end do:
     else
-        Rorig := DifferentialRing(blocks = [[op(inputs)], [op(outputs)], [op(states)]], derivations = [t], arbitrary = params):
+        Rorig := DifferentialRing(blocks = [[op(outputs)], [op(states)], [op(inputs)]], derivations = [t], arbitrary = params):
         chset_orig := RosenfeldGroebner(model, Rorig)[1]:
         yus_reduced := map(p -> p = NormalForm(p, chset_orig), yus):
     end if:
