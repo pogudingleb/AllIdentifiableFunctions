@@ -254,7 +254,7 @@ end proc:
 # by Kitonum 15364
 coefff:=proc(P, t)
     local L, H, i, k:
-    L:=[coeffs(P, indets(P), 'h')]: H:=[h]: k:=0:
+    L:=[coeffs(P, indets(P), 'h_aux_for_coef')]: H:=[h_aux_for_coef]: k:=0:
     for i from 1 to nops(H) do
         if H[i]=t then k:=L[i] fi:
     end do:
