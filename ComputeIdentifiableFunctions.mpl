@@ -21,14 +21,14 @@ FieldToIdeal := proc(gens)
     local all_vars, subs_dupl, all_dupl, common_denom, polys, f, gb:
     all_vars := indets(gens):
     subs_dupl := map(v -> v = cat(v, _aux), all_vars):
-    all_dupl := map(v -> subs(subs_dupl, v), all_vars):
+    all_dupl := sort([op(map(v -> subs(subs_dupl, v), all_vars))]):
     common_denom := 1:
     polys := []:
     for f in gens do
         common_denom := lcm(common_denom, denom(f)):
         polys := [op(polys), numer(f) * subs(subs_dupl, denom(f)) - subs(subs_dupl, numer(f)) * denom(f)]:
     end do:
-    gb := Groebner[Basis]([op(polys), common_denom * t - 1], tdeg(t, op(all_dupl))):
+    gb := Groebner[Basis]([op(polys), subs(subs_dupl, common_denom) * t - 1], tdeg(t, op(all_dupl))):
     gb := Groebner[Walk](gb, tdeg(t, op(all_dupl)), lexdeg([t], [op(all_dupl)])):
     gb := select(p -> not (t in indets(p)), gb):
     return PolynomialIdeal(gb, variables=all_dupl):
